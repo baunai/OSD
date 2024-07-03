@@ -46,6 +46,7 @@ if (!(Test-Path -path $LogFilePath)){$Null = new-item -Path $LogFilePath -ItemTy
 if (!(Test-Path -path $PSTranscriptsFolder)){$Null = new-item -Path $PSTranscriptsFolder -ItemType Directory -Force}
 
 
+<#.
 if ($PSVersionTable.PSVersion.Major -ne 7) {
     Install-PackageProvider -Name NuGet -Force
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
@@ -53,6 +54,7 @@ if ($PSVersionTable.PSVersion.Major -ne 7) {
     PS7Bootstrap.ps1 -$PSCommandPath
     #Exit $LASTEXITCODE
 }
+.#>
 
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
