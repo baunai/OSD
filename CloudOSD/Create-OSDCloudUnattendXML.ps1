@@ -17,7 +17,7 @@ TS Variables Created:
  - OSDTargetSystemPartition
  
 #>
-#region: Write-CMLog Function formats logging in CMTrace style
+<#.
 if ($PSVersionTable.PSVersion.Major -ne 7) {
     Install-PackageProvider -Name NuGet -Force
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
@@ -25,6 +25,7 @@ if ($PSVersionTable.PSVersion.Major -ne 7) {
     PS7Bootstrap.ps1 -$PSCommandPath
     #Exit $LASTEXITCODE
 }
+.#>
 
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
