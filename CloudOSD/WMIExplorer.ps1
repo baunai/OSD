@@ -30,6 +30,7 @@ $LogFile = "$LogFilePath\WMIExplorer.log"
 $FileName = "WmiExplorer_2.0.0.2.zip"
 $InstallPath = "$env:windir\System32"
 
+<#.
 if ($PSVersionTable.PSVersion.Major -ne 7) {
     Install-PackageProvider -Name NuGet -Force
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
@@ -37,6 +38,7 @@ if ($PSVersionTable.PSVersion.Major -ne 7) {
     PS7Bootstrap.ps1 -$PSCommandPath
     #Exit $LASTEXITCODE
 }
+.#>
 
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
