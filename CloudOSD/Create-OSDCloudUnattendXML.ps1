@@ -230,6 +230,14 @@ $tsenv.value('OSDTargetSystemPartition') = "0-3" #Assume Disk 0, 3rd Partition, 
                <Description>disable user account page</Description>
                <Path>reg add HKLM\Software\Microsoft\Windows\CurrentVersion\Setup\OOBE /v UnattendCreatedUser /t REG_DWORD /d 1 /f</Path>
            </RunSynchronousCommand>
+           <RunSynchronousCommand><Order>2</Order>
+               <Description>TSBackground</Description>
+               <Path>%OSDTargetSystemDrive%\Windows\temp\TSBackground\TSBackground.exe UNATTEND</Path>
+				       </RunSynchronousCommand>
+           <RunSynchronousCommand><Order>3</Order>
+					          <Description>OSDCloud Specialize</Description>
+					          <Path>PowerShell.exe -ExecutionPolicy Bypass -Command Invoke-OSDSpecialize</Path>
+           </RunSynchronousCommand>
        </RunSynchronous>
    </component>
    <component name="Microsoft-Windows-IE-InternetExplorer" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
