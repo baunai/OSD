@@ -17,18 +17,6 @@ TS Variables Created:
  - OSDTargetSystemPartition
  
 #>
-#region: Write-CMLog Function formats logging in CMTrace style
-if ($env:SystemDrive -eq "X:") {
-    Write-Host "Running in WinPE mode. Powershell version 5 will run"
-} else {
-    if ($PSVersionTable.PSVersion.Major -ne 7) {
-        Install-PackageProvider -Name NuGet -Force
-        Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-        Install-Script PS7Bootstrap -Force -ErrorAction Ignore
-        PS7Bootstrap.ps1 -$PSCommandPath
-        #Exit $LASTEXITCODE
-    }
-}
 
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
@@ -246,12 +234,6 @@ $tsenv.value('OSDTargetSystemPartition') = "0-3" #Assume Disk 0, 3rd Partition, 
                 <Path>PowerShell.exe -ExecutionPolicy Bypass -Command Invoke-OSDSpecialize</Path>
        </RunSynchronous>
    </component>
-   <component name="Microsoft-Windows-IE-InternetExplorer" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <DisableFirstRunWizard>true</DisableFirstRunWizard>
-        <BlockPopups>yes</BlockPopups>
-        <Home_Page>http://police.portal.hpd</Home_Page>
-        <MSCompatibilityMode>true</MSCompatibilityMode>
-    </component>
 </settings></unattend>
 "@
 
