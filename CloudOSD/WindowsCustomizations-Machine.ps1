@@ -35,7 +35,7 @@ if ($tsenv){
     $LogFolder = $tsenv.value('CompanyFolder')#Company Folder is set during the TS Var at start of TS.
     $CompanyName = $tsenv.value('CompanyName')
     }
-if (!($CompanyName)){$CompanyName = "RecastSoftwareIT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
+if (!($CompanyName)){$CompanyName = "HPDSoftwareIT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
 if (!($LogFolder)){$LogFolder = "$env:ProgramData\$CompanyName"}
 $LogFilePath = "$LogFolder\Logs"
 $LogFile = "$LogFilePath\MachineCustomizations.log"
@@ -101,7 +101,7 @@ function Write-Log {
 
         [Parameter(Mandatory = $false, HelpMessage = "Name of the log file that the entry will written to.")]
         [ValidateNotNullOrEmpty()]
-        [string]$FileName = "YourLogFileName.log"
+        [string]$FileName = "WindowsCustomizations-Machine.log"
     )
     
     if (Get-TaskSequenceStatus) {
