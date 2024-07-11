@@ -75,7 +75,7 @@ function Write-Log {
 
         [Parameter(Mandatory = $false, HelpMessage = "Name of the log file that the entry will written to.")]
         [ValidateNotNullOrEmpty()]
-        [string]$FileName = "YourLogFileName.log"
+        [string]$FileName = "Create-OSDCloudUnattendXML.log"
     )
     
     if (Get-TaskSequenceStatus) {
