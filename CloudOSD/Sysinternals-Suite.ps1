@@ -28,7 +28,7 @@ $LogFilePath = "$LogFolder\Logs"
 $LogFile = "$LogFilePath\Sysinternals-Suite.log"
 
 #Create Shortcuts for:
-$ShortCuts = @("Process Explorer", "Process Monitor", "RDCMan.exe", "ZoomIt")
+$ShortCuts = @("Process Explorer", "Process Monitor", "ZoomIt")
 
 #Download & Extract to Program Files
 $FileName = "SysinternalsSuite.zip"
@@ -237,8 +237,8 @@ foreach ($App in $Sysinternals)#{}
                     }
                 else
                     {
-                    $64BigVersion = $Sysinternals | Where-Object {$_.Name -match "64" -and $_.VersionInfo.ProductName -match $AppName}
-                    if ($64BigVersion){
+                    $64BitVersion = $Sysinternals | Where-Object {$_.Name -match "64" -and $_.VersionInfo.ProductName -match $AppName}
+                    if ($64BitVersion){
                         #Write-Output "Found 64Bit Version: $($64BigVersion.Name), Using that instead"
                         }
                     else {
