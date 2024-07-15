@@ -211,6 +211,51 @@ foreach ($App in $Sysinternals)#{}
             $AppInternalName = $App.VersionInfo.InternalName
             $AppName = $App.VersionInfo.ProductName
             $AppFileName = $App.Name
+
+            if ($AppInternalName -like "RDCMan.exe") {
+                if ($App.Name -match "64")
+                    {
+                    if ($AppName -match "Sysinternals"){
+                        $AppName = $AppName.Replace("Sysinternals ","")
+                        }
+                    Write-Log -Message  "Create Shortcut for $($App.Name)"
+                    #Write-Host "Create Shortcut for $($App.Name)" -ForegroundColor Green
+                    #Build ShortCut Information
+                    $SourceExe = $App.FullName
+                    $DestinationPath = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\SysInternals\$($AppName).lnk"
+
+                    #Create Shortcut
+                    $WshShell = New-Object -comObject WScript.Shell
+                    $Shortcut = $WshShell.CreateShortcut($DestinationPath)
+                    $Shortcut.TargetPath = $SourceExe
+                    $Shortcut.Save()
+                    }
+                else
+                    {
+                    $64BitVersion = $Sysinternals | Where-Object {$_.Name -match "64" -and $_.VersionInfo.ProductName -match $AppName}
+                    if ($64BitVersion){
+                        #Write-Output "Found 64Bit Version: $($64BigVersion.Name), Using that instead"
+                        }
+                    else {
+                        if ($AppName -match "Sysinternals"){
+                            $AppName = $AppName.Replace("Sysinternals ","")
+                            }
+                        #Write-Output "No 64Bit Version, use 32bit"
+                        #Write-Host "Create Shortcut for $($App.Name)" -ForegroundColor Green
+                        Write-Log -Message  "Create Shortcut for $($App.Name)"
+                        #Build ShortCut Information
+                        $SourceExe = $App.FullName
+                        $DestinationPath = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\SysInternals\$($AppName).lnk"
+                        #Create Shortcut
+                        $WshShell = New-Object -comObject WScript.Shell
+                        $Shortcut = $WshShell.CreateShortcut($DestinationPath)
+                        $Shortcut.TargetPath = $SourceExe
+                        $Shortcut.Save()
+                
+                        }
+                  }
+            }
+            
             if ($AppInternalName -in $ShortCuts)
                 {
                 #Write-Output $AppName
