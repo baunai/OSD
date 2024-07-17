@@ -211,10 +211,6 @@ $tsenv.value('OSDTargetSystemPartition') = "0-3" #Assume Disk 0, 3rd Partition, 
            <UnattendEnableRetailDemo>false</UnattendEnableRetailDemo>
            <SkipMachineOOBE>true</SkipMachineOOBE>
        </OOBE>
-           <RegisteredOrganization>Houston Police Department</RegisteredOrganization>
-           <RegisteredOwner>HPD User</RegisteredOwner>
-           <TimeZone>Central Standard Time</TimeZone>
-           <ShowWindowsLive>false</ShowWindowsLive>
    </component>
    <component name="Microsoft-Windows-International-Core" language="neutral" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
        <SystemLocale>en-US</SystemLocale>
