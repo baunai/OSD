@@ -30,18 +30,17 @@ If ([Version]$TestWinGet.Version -gt "2022.506.16.0") {
     Catch {
         Write-Host "Failed to install MSIXBundle for App Installer..." -ForegroundColor Red
         } 
-
-    #Remove WinGet MSIXBundle 
-    #Remove-Item -Path "$InstallerFolder\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -Force -ErrorAction Continue
-    
-
-    $ResolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe\winget.exe"
-        if ($ResolveWingetPath){
-            $WingetPath = $ResolveWingetPath[-1].Path
-        }
-
-        $Wingetpath = Split-Path -Path $WingetPath -Parent
-        Set-Location $wingetpath
-        #.\winget.exe install --exact --id Microsoft.EdgeWebView2Runtime --silent --accept-package-agreements --accept-source-agreements
-        .\winget install --id Microsoft.PowerShell --source winget --silent --accept-package-agreements --accept-source-agreements
 }
+#Remove WinGet MSIXBundle 
+#Remove-Item -Path "$InstallerFolder\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -Force -ErrorAction Continue
+
+
+$ResolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe\winget.exe"
+    if ($ResolveWingetPath){
+        $WingetPath = $ResolveWingetPath[-1].Path
+    }
+
+    $Wingetpath = Split-Path -Path $WingetPath -Parent
+    Set-Location $wingetpath
+    #.\winget.exe install --exact --id Microsoft.EdgeWebView2Runtime --silent --accept-package-agreements --accept-source-agreements
+    .\winget install --id Microsoft.PowerShell --source winget --silent --accept-package-agreements --accept-source-agreements
