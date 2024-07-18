@@ -44,3 +44,4 @@ If ([Version]$TestWinGet.Version -gt "2022.506.16.0") {
         Set-Location $wingetpath
         #.\winget.exe install --exact --id Microsoft.EdgeWebView2Runtime --silent --accept-package-agreements --accept-source-agreements
         .\winget install --id Microsoft.PowerShell --source winget --silent --accept-package-agreements --accept-source-agreements
+}
