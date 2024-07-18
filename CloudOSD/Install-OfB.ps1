@@ -103,11 +103,9 @@ $FileName = "Install-OfB.log"
 if (Get-TaskSequenceStatus) {
     $TSEnv = New-Object -ComObject Microsoft.SMS.TSEnvironment
     $LogDir = $TSEnv.Value("_SMSTSLogPath")
-    $LogFilePath = Join-Path -Path $LogDir -ChildPath $FileName
 }
 else {
     $LogDir = Join-Path -Path "${env:SystemRoot}" -ChildPath "Temp"
-    $LogFilePath = Join-Path -Path $LogDir -ChildPath $FileName
 }
 
 $Vendor = "Microsoft"
@@ -121,15 +119,15 @@ $UnattendedArgs = '/allusers /silent'
 if (!(Test-Path -Path $Destination)) {
     try {
         New-Item -Path $Destination -ItemType directory -ErrorAction Stop
-        Write-Log -Message "INFO: $Destination directory created." -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace
+        Write-Log -Message "INFO: $Destination directory created." -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
     }
     catch [System.Exception] {
         # Exception is stored in the automatic variable _
-        Write-Log -Message "ERROR: Unable creating $Destination directory. Error message: $($_.Exception.Message)" -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace -Severity 3
+        Write-Log -Message "ERROR: Unable creating $Destination directory. Error message: $($_.Exception.Message)" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace -Severity 3
     }
 }
 
-Write-Log -Message "INFO: Downloading $Vendor $Product $Version to $Destination directory." -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace
+Write-Log -Message "INFO: Downloading $Vendor $Product $Version to $Destination directory." -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 if (!(Test-Path -Path "$Destination\$Source")) {
     try {
         Invoke-WebRequest -UseBasicParsing -OutFile "$Destination\$Source" -Uri $URL -ErrorAction Stop
@@ -138,19 +136,19 @@ if (!(Test-Path -Path "$Destination\$Source")) {
     }
     catch [System.Exception] {
         # Exception is stored in the automatic variable Invoke-WebRequest -UseBasicParsing -OutFile "$Destination\$Source"
-        Write-Log -Message "ERROR: Unable to download $Source file. Error message: $($_.Exception.Message)" -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace -Severity 3; exit 0
+        Write-Log -Message "ERROR: Unable to download $Source file. Error message: $($_.Exception.Message)" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace -Severity 3; exit 0
     }
 }
 
 if (Test-Path -Path "$Destination\$Source") {
-    Write-Log -Message "INFO: Start the installation of $Vendor $Product $Version" -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace
+    Write-Log -Message "INFO: Start the installation of $Vendor $Product $Version" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
     try {
         (Start-Process "$Destination\$Source" $UnattendedArgs -Wait -Passthru).ExitCode
-        Write-Log -Message "INFO: Complete $Vendor $Product $Version installation." -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace
+        Write-Log -Message "INFO: Complete $Vendor $Product $Version installation." -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
     }
     catch [System.Exception] {
         # Exception is stored in the automatic variable Start-Process "$Destination\$Source" $UnattendedArgs -Wait -Passthru).ExitCode
-        Write-Log -Message "ERROR: Installation of $Vendor $Product $Version failed. Error message: $($_.Exception.Message)" -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace -Severity 3
+        Write-Log -Message "ERROR: Installation of $Vendor $Product $Version failed. Error message: $($_.Exception.Message)" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace -Severity 3
     }
 }
 
@@ -159,33 +157,43 @@ $RegPath = "HKLM:\SOFTWARE\Policies\Microsoft\OneDrive"
 $TenantGUID = "64c753ca-2ec6-4981-81e7-5c7597f9e7d8"
 
 #Allow syncing OneDrive accounts for only specific organizations
+Write-Log -Message "INFO: Set Allow syncing OneDrive accounts for only specific organizations" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name AllowTenantList -Value $TenantGUID
 
 #Silently sign in users to the OneDrive sync app with their Windows credentials
+Write-Log -Message "INFO: Set Silently sign in users to the OneDrive sync app with their Windows credentials" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name SilentAccountConfig -Type DWord -Value 1
 
 #Prompt users to move Windows known folders to OneDrive
+Write-Log -Message "INFO: Set Prompt users to move Windows known folders to OneDrive" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name KFMOptInWithWizard -Value $TenantGUID
         
 #Silently move Windows known folders to OneDrive
+Write-Log -Message "INFO: Set Silently move Windows known folders to OneDrive" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name KFMSilentOptIn -Value $TenantGUID
 
 #Show notification to users after folders have been redirected
+Write-Log -Message "INFO: Set Show notification to users after folders have been redirected" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name KFMSilentOptInWithNotification -Value 0
 
 #Use OneDrive Files On-Demand
+Write-Log -Message "INFO: Set Use OneDrive Files On-Demand" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name FilesOnDemandEnabled -Type DWord -Value 1
 
 #Require users to confirm large delete operations
+Write-Log -Message "INFO: Set Require users to confirm large delete operations" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name ForcedLocalMassDeleteDetection -Type DWord -Value 1
 
 #Prevent users from fetching files remotely
+Write-Log -Message "INFO: Set Prevent users from fetching files remotely" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name GPOEnabled -Type DWord -Value 1
 
 #Prevent users from syncing libraries and folders shared from other organizations
+Write-Log -Message "INFO: Set Prevent users from syncing libraries and folders shared from other organizations" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name BlockExternalSync -Type DWord -Value 1  
         
 #Enable automatic upload bandwidth management for OneDrive
+Write-Log -Message "INFO: Set Enable automatic upload bandwidth management for OneDrive" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 Set-RegistryKey -Key $RegPath -Name EnableAutomaticUploadBandwidthManagement -Type DWord -Value 1      
 
 #Continue syncing on metered networks and Prevent users from syncing personal OneDrive accounts
@@ -221,6 +229,6 @@ try {
 }
 catch [System.Exception] {
     # Exception is stored in the automatic variable if
-    Write-Log -Message "WARNING: Unable to remove $Destination folder. You have to manually removing it. Error message: $($_.Exception.Message)" -Severity 2
+    Write-Log -Message "WARNING: Unable to remove $Destination folder. You have to manually removing it. Error message: $($_.Exception.Message)" -Severity 2 -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 }
-Write-Log -Message "INFO: $Destination folder removed and the installation of $Vendor $Product completed." -LogFileDirectory $LogDir -LogFileName $LogFilePath -LogType CMTrace
+Write-Log -Message "INFO: $Destination folder removed and the installation of $Vendor $Product completed." -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
