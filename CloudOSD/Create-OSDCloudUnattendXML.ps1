@@ -229,6 +229,10 @@ $tsenv.value('OSDTargetSystemPartition') = "0-3" #Assume Disk 0, 3rd Partition, 
                 <Description>OSDCloud Specialize</Description>
                 <Path>PowerShell.exe -ExecutionPolicy Bypass -Command Invoke-OSDSpecialize</Path>
             </RunSynchronousCommand>
+            <RunSynchronousCommand><Order>4</Order>
+                <Description>Enable Legacy DomJoin</Description>
+                <Path>reg add HKLM\System\CurrentControlSet\Control\Lsa /v NetJoinLegacyAccountReuse /t REG_DWORD /d 1 /f</Path>
+            </RunSynchronousCommand>
        </RunSynchronous>
    </component>
 </settings></unattend>
