@@ -162,10 +162,10 @@ $sourcePlatformx64 = "https://go.microsoft.com/fwlink/?LinkID=870379&clcid=0x409
 
 # Web client #####################################################################
 
-Write-Log -Message "=====================================================" -Type 1
-Write-Log -Message "UPDATE Defender: Script version $ScriptVer..." -Type 1
-Write-Log -Message "=====================================================" -Type 1
-Write-Log -Message "Running Script as $env:USERNAME" -Type 1
+Write-Log -Message "====================================================="
+Write-Log -Message "UPDATE Defender: Script version $ScriptVer..."
+Write-Log -Message "====================================================="
+Write-Log -Message "Running Script as $env:USERNAME"
 
 # Prepare Intermediate folder ###################################################
 
@@ -197,7 +197,7 @@ $x = Get-Item -Path $Dest
 [version]$Version1b = (Get-MpComputerStatus).AntivirusSignatureVersion #Currently Installed
 
 if ($Version1a -gt $Version1b){
-   Write-Log -Message "Starting MPAM-FE Install of $Version1b to $Version1a" -Type 1
+   Write-Log -Message "Starting MPAM-FE Install of $Version1b to $Version1a"
    $MPAMInstall = Start-Process -FilePath $Dest -Wait -PassThru
    }
 else
