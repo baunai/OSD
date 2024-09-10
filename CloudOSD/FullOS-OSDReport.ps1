@@ -115,7 +115,7 @@ if ($tsenv)
     New-ItemProperty -Path $registryPath -Name "OSD_AuthenticatedTCDisplayName" -Value $tsenv.Value("XAuthenticatedUserDisplayName")
 
     #Get OSD ImageID
-    New-ItemProperty -Path $registryPath -Name "OSD_OSImageID" -Value $imageIDElement[0].node.InnerText
+    #New-ItemProperty -Path $registryPath -Name "OSD_OSImageID" -Value $imageIDElement[0].node.InnerText
 
     #Get Task Sequence ID
     New-ItemProperty -Path $registryPath -Name "OSD_TaskSequenceID" -Value $tsenv.Value("_SMSTSPackageID")
