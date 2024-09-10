@@ -74,10 +74,14 @@ if ($tsenv)
     $MemorySize = (Get-CimInstance -ClassName Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum/1GB
     New-ItemProperty -Path $registryPath -Name "InstalledRAM" -Value "$MemorySize GB"
     
-    #Get OSName
+    #Get and set OSName
     $OSName = (Get-ComputerInfo).OSName
     New-ItemProperty -Path $registryPath -Name "OSD_CurrentOS" -Value "$OSName"
-
+    
+    # Get and set OSBuild
+    $OSBuild = Get-ItemProperty -Path "HKLM:SOFTWARE\Microsoft\Windows NT\CurrentVersion" | Select-Object -ExpandProperty DisplayVersion
+    New-ItemProperty -Path $registryPath -Name "OSD_OSBuild" -Value "$OSBuild"
+    
     #Set BootImageID
     New-ItemProperty -Path $registryPath -Name "OSD_BootImageID" -Value $tsenv.Value("_SMSTSBootImageID")
 
@@ -103,7 +107,7 @@ if ($tsenv)
     New-ItemProperty -Path $registryPath -Name "OSD_Organization" -Value $tsenv.Value("_SMSTSOrgName")
 
     #Set OSD Build
-    New-ItemProperty -Path $registryPath -Name "OSD_OSBuild" -Value $tsenv.Value("SMSTS_Build")
+    #New-ItemProperty -Path $registryPath -Name "OSD_OSBuild" -Value $tsenv.Value("SMSTS_Build")
 
     #Set OSD Windows OS Version
     #New-ItemProperty -Path $registryPath -Name "OSD_OSVersion" -Value $tsenv.Value("SMSTS_OSVersion")
