@@ -232,3 +232,4 @@ catch [System.Exception] {
     Write-Log -Message "WARNING: Unable to remove $Destination folder. You have to manually removing it. Error message: $($_.Exception.Message)" -Severity 2 -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
 }
 Write-Log -Message "INFO: $Destination folder removed and the installation of $Vendor $Product completed." -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
+Exit-Script -ExitCode $mainExitCode
