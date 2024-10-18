@@ -103,6 +103,9 @@ if ($tsenv)
     #Set SerialNumber
     New-ItemProperty -Path $registryPath -Name "OSD_SerialNumber" -Value $tsenv.Value("_SMSTSSerialNumber")
 
+    #Set Chassis Type
+    New-ItemProperty -Path $registryPath -Name "OSD_ChassisType" -Value $tsenv.Value("XHWChassisType")
+
     #Get Machine Name
     New-ItemProperty -Path $registryPath -Name "OSD_MachineName" -Value $($env:COMPUTERNAME)
 
