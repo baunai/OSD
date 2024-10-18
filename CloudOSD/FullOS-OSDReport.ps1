@@ -97,6 +97,9 @@ if ($tsenv)
    #Set Model
     New-ItemProperty -Path $registryPath -Name "OSD_Model" -Value $tsenv.Value("_SMSTSModel")
 
+    #Set HWProduct
+    New-ItemProperty -Path $registryPath -Name "OSD_HWProduct" -Value $tsenv.Value("XHWProduct")
+
     #Set SerialNumber
     New-ItemProperty -Path $registryPath -Name "OSD_SerialNumber" -Value $tsenv.Value("_SMSTSSerialNumber")
 
