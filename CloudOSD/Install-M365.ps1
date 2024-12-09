@@ -257,6 +257,7 @@ function Set-XMLFile {
   
 }
 
+<#.
 function Get-ODTURL {
 
   [String]$MSWebPage = Invoke-RestMethod 'https://www.microsoft.com/en-us/download/confirmation.aspx?id=49117'
@@ -269,6 +270,7 @@ function Get-ODTURL {
   }
 
 }
+.#>
 
 $VerbosePreference = 'Continue'
 $ErrorActionPreference = 'Stop'
@@ -295,9 +297,10 @@ else {
 }
 
 $ConfigurationXMLFile = "$OfficeInstallDownloadPath\OfficeInstall.xml"
-$ODTInstallLink = Get-ODTURL
+#$ODTInstallLink = Get-ODTURL
 Write-Log -Message "Download Office Deployment Tool from $($ODTInstallLink)"
 
+<#.
 #Download the Office Deployment Tool
 Write-Log -Message 'Downloading the Office Deployment Tool...'
 try {
@@ -309,6 +312,14 @@ catch {
   Write-Log -Message "$ODTInstallLink" -Severity 2
   Write-Log -Message "Please verify the below link is valid: $ODTInstallLink" -Severity 2
   exit
+}
+.#>
+
+# Download ODTSetup.exe from another url if not detected
+if(!(Test-Path "$OfficeInstallDownloadPath\ODTSetup.exe")) {
+    Write-Log -Message 'Downloading the Office Deployment Tool with Invoke-WebRequest method.....'
+    $ODTUrl = (Invoke-WebRequest -Uri 'https://www.microsoft.com/en-us/download/details.aspx?id=49117').Links.href | Where-Object {$_ -like '*officedeploymenttool*'}
+    Invoke-WebRequest -Uri $ODTUrl -OutFile "$OfficeInstallDownloadPath\ODTSetup.exe"
 }
 
 #Run the Office Deployment Tool setup
