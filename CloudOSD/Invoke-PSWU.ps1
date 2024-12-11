@@ -115,7 +115,7 @@ if (Test-Path "$($env:ProgramFiles)\WindowsPowerShell\Modules\PSWindowsUpdate") 
     $PSWUModulePath = (Get-ChildItem "$($env:ProgramFiles)\WindowsPowerShell\Modules\PSWindowsUpdate" | Where-Object {$_.Attributes -match 'Directory'} | Select-Object -Last 1).FullName
     Import-Module "$PSWUModulePath\PSWindowsUpdate.psd1" -Force
 } else {
-    Write-Log -Message "PSWU module not FOUND. Start downloading...."
+    Write-Log -Message "PSWindowsUpdate module not FOUND. Start downloading...."
     #Requires -Version 5.1
     #Requires -RunAsAdministrator
 
@@ -210,7 +210,7 @@ Write-Log -Message "Run Windows Update of $OSName build version $OSVer"
 
 # Get information about local WSUS server
 $wuServer = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name WUServer -ErrorAction Ignore).WUServer
-$useWUServer = (Get-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU" -ErrorAction Ignore).UseWuServer
+$useWUServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -ErrorAction Ignore).UseWuServer
 
 if ($null -eq $wuServer) {
         Write-Log -Message "No WSUS server setting found. Directly install updates from Microsoft."
@@ -221,40 +221,21 @@ if ($null -eq $wuServer) {
 }
 
 if ($null -ne $wuServer) {
-    if ($useWUServer -eq "1") {
-        Write-Log -Message "A local WSUS server was found configured by: $wuServer" -Severity 2
-        Write-Log -Message "Temporarily disabling WSUS in order to install updates..."
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 0
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 0
-        Restart-Service wuauserv
-        $OutputText = Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-String
-        Write-Log -Message "[$OutputText]"
-        #Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-File -FilePath $ScriptLogFilePath -Append -NoClobber -Encoding default -Width 256
-        
-        # Reset WSUS Setting
-        Write-Log -Message "***********************************************************" -Severity 1
-        Write-Log -Message "Enable WSUS setting again POST installing" -Severity 1
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 1
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 1
-        Restart-Service wuauserv
-        Write-Log -Message "Complete windows update on $env:COMPUTERNAME"
-    } else {
-        Write-Log -Message "Temporarily disabling WSUS in order to install updates..."
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 0
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 0
-        Restart-Service wuauserv
-        $OutputText = Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-String
-        Write-Log -Message "[$OutputText]"
-        #Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-File -FilePath $ScriptLogFilePath -Append -NoClobber -Encoding default -Width 256
-        
-        # Reset WSUS Setting
-        Write-Log -Message "***********************************************************" -Severity 1
-        Write-Log -Message "Enable WSUS setting again POST installing" -Severity 1
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 1
-        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 1
-        Restart-Service wuauserv
-        Write-Log -Message "Complete windows update on $env:COMPUTERNAME"
-    }   
+    Write-Log -Message "Temporarily disabling WSUS in order to install updates..."
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 0
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 0
+    Restart-Service wuauserv
+    $OutputText = Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-String
+    Write-Log -Message "[$OutputText]"
+    #Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-File -FilePath $ScriptLogFilePath -Append -NoClobber -Encoding default -Width 256
+    
+    # Reset WSUS Setting
+    Write-Log -Message "***********************************************************"
+    Write-Log -Message "Enable WSUS setting again POST installing" -Severity 1
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 1
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 1
+    Restart-Service wuauserv
+    Write-Log -Message "Complete windows update on $env:COMPUTERNAME"   
 }
 
 $Script_End_Time = (Get-Date).ToShortDateString() + ", " + (Get-Date).ToLongTimeString()
