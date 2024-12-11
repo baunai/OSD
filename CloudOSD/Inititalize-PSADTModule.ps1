@@ -73,4 +73,6 @@ Function Initialize-Module {
     }
 }
 
-Initialize-Module -Module "PSADT"
+#Initialize-Module -Module "PSADT"
+Initialize-Module -Module "PSAppDeployToolkit"
+
