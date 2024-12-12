@@ -203,16 +203,18 @@ $PackageName = "AcroRdrDC"
 $Installer = "exe"
 $Source = "$PackageName" + "." + "$Installer"
 $Evergreenx64 = Get-EvergreenApp -Name AdobeACrobatReaderDC -ErrorAction SilentlyContinue | Where-Object { $_.Architecture -eq "x64" -and $_.Language -eq "English" }
-$Evergreen = Get-EvergreenApp -Name AdobeACrobatReaderDC -ErrorAction SilentlyContinue | Where-Object { $_.Architecture -eq "x86" -and $_.Language -eq "English" }
+#$Evergreen = Get-EvergreenApp -Name AdobeACrobatReaderDC -ErrorAction SilentlyContinue | Where-Object { $_.Architecture -eq "x86" -and $_.Language -eq "English" }
 $Destination = "${env:SystemRoot}" + "\ccmcache\$Vendor"
 $ProgressPreference = 'SilentlyContinue'
 $UnattendedArgs = '/sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES ENABLE_CHROMEEXT=0 ENABLE_OPTIMIZATION=1 IW_DEFAULT_VERB=READ ADD_THUMBNAILPREVIEW=0 DISABLEDESKTOPSHORTCUT=1 UPDATE_MODE=3 DISABLE_ARM_SERVICE_INSTALL=1'
 
+<#.
 $VersionURI = "https://rdc.adobe.io/reader/products?lang=en&site=enterprise&os=Windows 10&api_key=dc-get-adobereader-cdn"
 $Version = (Invoke-RestMethod -Uri $VersionURI).Products.Reader.Version 
 $Version = ($Version -replace '\.', $Null).Trim()
 $DownloadURI = ('http://ardownload.adobe.com/pub/adobe/reader/win/AcrobatDC/{0}/AcroRdrDC{0}_en_US.exe' -f $Version)
- 
+.#>
+
 If (!(Test-Path -Path $Destination)) { New-Item -ItemType directory -Path $Destination | Out-Null }
 Write-Log -Message "INFO: Creating folder: $($Destination)"
 Write-Log -Message "INFO: Dowloading $Vendor $Product $Version to $Destination"
@@ -220,12 +222,13 @@ if (!(Test-Path $Destination\$Source)) {
     if ($Evergreenx64) {
         Write-Log -Message "INFO: $Evergreenx64 found. Start downloading"
         Invoke-WebRequest -Uri $Evergreenx64.URI -UseBasicParsing -OutFile "$Destination\$Source"
-    } elseif ($Evergreen) {
-        Write-Log -Message "INFO: $Evergreen found. Start downloading"
-        Invoke-WebRequest -Uri $Evergreen.URI -UseBasicParsing -OutFile "$Destination\$Source"
+    #} elseif ($Evergreen) {
+    #    Write-Log -Message "INFO: $Evergreen found. Start downloading"
+    #    Invoke-WebRequest -Uri $Evergreen.URI -UseBasicParsing -OutFile "$Destination\$Source"
     } else {
         Write-Log -Message "INFO: Evergreen does not work because the macOS and Windows update versions are out of step right now. Start another downloading method."
-        Invoke-WebRequest -Uri $DownloadURI -UseBasicParsing -OutFile "$Destination\$Source"
+        Write-Log -Message "Failed to downlaod Adobe Acrobat 64-bit" -Severity 3
+        #Invoke-WebRequest -Uri $DownloadURI -UseBasicParsing -OutFile "$Destination\$Source"
     }
 }    
 
@@ -250,7 +253,7 @@ $RegLocations = @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
 
 $AdobeRdrInstalled = $False
 foreach ($Key in (Get-ChildItem $RegLocations) ) {
-    if ($Key.GetValue('DisplayName') -like '*Acrobat Reader DC*') {
+    if ($Key.GetValue('DisplayName') -like '*Acrobat (64-Bit)*') {
         $AdobeRdrInstalled = $Key.GetValue('DisplayName')
         $AdobeRdrInstalled = $True
     }
