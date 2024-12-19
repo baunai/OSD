@@ -73,7 +73,8 @@ Function Initialize-Module {
     }
 }
 
-Initialize-Module -Module "PSADT"
+Initialize-Module -Module "PSAppDeployToolKit"
+Open-ADTSession -SessionState $ExecutionContext.SessionState
 
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
@@ -158,51 +159,51 @@ $TenantGUID = "64c753ca-2ec6-4981-81e7-5c7597f9e7d8"
 
 #Allow syncing OneDrive accounts for only specific organizations
 Write-Log -Message "INFO: Set Allow syncing OneDrive accounts for only specific organizations" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name AllowTenantList -Value $TenantGUID
+Set-ADTRegistryKey -Key $RegPath -Name AllowTenantList -Value $TenantGUID
 
 #Silently sign in users to the OneDrive sync app with their Windows credentials
 Write-Log -Message "INFO: Set Silently sign in users to the OneDrive sync app with their Windows credentials" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name SilentAccountConfig -Type DWord -Value 1
+Set-ADTRegistryKey -Key $RegPath -Name SilentAccountConfig -Type DWord -Value 1
 
 #Prompt users to move Windows known folders to OneDrive
 Write-Log -Message "INFO: Set Prompt users to move Windows known folders to OneDrive" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name KFMOptInWithWizard -Value $TenantGUID
+Set-ADTRegistryKey -Key $RegPath -Name KFMOptInWithWizard -Value $TenantGUID
         
 #Silently move Windows known folders to OneDrive
 Write-Log -Message "INFO: Set Silently move Windows known folders to OneDrive" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name KFMSilentOptIn -Value $TenantGUID
+Set-ADTRegistryKey -Key $RegPath -Name KFMSilentOptIn -Value $TenantGUID
 
 #Show notification to users after folders have been redirected
 Write-Log -Message "INFO: Set Show notification to users after folders have been redirected" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name KFMSilentOptInWithNotification -Value 0
+Set-ADTRegistryKey -Key $RegPath -Name KFMSilentOptInWithNotification -Value 0
 
 #Use OneDrive Files On-Demand
 Write-Log -Message "INFO: Set Use OneDrive Files On-Demand" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name FilesOnDemandEnabled -Type DWord -Value 1
+Set-ADTRegistryKey -Key $RegPath -Name FilesOnDemandEnabled -Type DWord -Value 1
 
 #Require users to confirm large delete operations
 Write-Log -Message "INFO: Set Require users to confirm large delete operations" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name ForcedLocalMassDeleteDetection -Type DWord -Value 1
+Set-ADTRegistryKey -Key $RegPath -Name ForcedLocalMassDeleteDetection -Type DWord -Value 1
 
 #Prevent users from fetching files remotely
 Write-Log -Message "INFO: Set Prevent users from fetching files remotely" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name GPOEnabled -Type DWord -Value 1
+Set-ADTRegistryKey -Key $RegPath -Name GPOEnabled -Type DWord -Value 1
 
 #Prevent users from syncing libraries and folders shared from other organizations
 Write-Log -Message "INFO: Set Prevent users from syncing libraries and folders shared from other organizations" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name BlockExternalSync -Type DWord -Value 1  
+Set-ADTRegistryKey -Key $RegPath -Name BlockExternalSync -Type DWord -Value 1  
         
 #Enable automatic upload bandwidth management for OneDrive
 Write-Log -Message "INFO: Set Enable automatic upload bandwidth management for OneDrive" -LogFileDirectory $LogDir -LogFileName $FileName -LogType CMTrace
-Set-RegistryKey -Key $RegPath -Name EnableAutomaticUploadBandwidthManagement -Type DWord -Value 1      
+Set-ADTRegistryKey -Key $RegPath -Name EnableAutomaticUploadBandwidthManagement -Type DWord -Value 1      
 
 #Continue syncing on metered networks and Prevent users from syncing personal OneDrive accounts
-[scriptblock]$HKCURegistrySettings = {
+Invoke-ADTAllUsersRegistryAction -ScriptBlock {
     New-item -Path HKCU:\Software\Policies\Microsoft -Name OneDrive -Force
-    Set-RegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ContinueOnError:$true
-    Set-RegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ContinueOnError:$true                     
+    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ContinueOnError:$true
+    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ContinueOnError:$true                     
 }
-Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
+#Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
 
 #Remove Old OneDrive shelve Folder from explorer for all users if existing
 $UserProfiles = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*" | Where-Object { $_.PSChildName -match "S-1-5-21-(\d+-?){4}$" -or $_.PSChildName -match "S-1-12-1-(\d+-?){4}$" } |
@@ -212,13 +213,13 @@ Select-Object @{Name = "SID"; Expression = { $_.PSChildName } },
 
 Foreach ($UserProfile in $UserProfiles) {
     $registryPath = "Registry::HKEY_USERS\$($UserProfile.SID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
-    Remove-RegistryKey -Key $registryPath -ContinueOnError:$true
+    Remove-ADTRegistryKey -Key $registryPath -ContinueOnError:$true
 }
 
-[scriptblock]$HKCURegistrySettings = {
-    Remove-RegistryKey -key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}' -Recurse -SID $UserProfile.SID -ContinueOnError:$true
+Invoke-ADTAllUsersRegistryAction -ScriptBlock {
+    Remove-ADTRegistryKey -key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}' -Recurse -SID $UserProfile.SID -ContinueOnError:$true
 }
-Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
+#Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
 
 
 # Removing source installation folder
