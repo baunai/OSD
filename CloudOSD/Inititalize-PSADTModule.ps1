@@ -75,4 +75,4 @@ Function Initialize-Module {
 
 #Initialize-Module -Module "PSADT"
 Initialize-Module -Module "PSAppDeployToolkit"
-
+Open-ADTSession -SessionState $ExecutionContext.SessionState
