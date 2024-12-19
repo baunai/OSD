@@ -198,7 +198,7 @@ Function Initialize-Module {
 Initialize-Module -Module "Evergreen"
 
 $Vendor = "Adobe"
-$Product = " Acrobat Reader DC"
+$Product = " Acrobat (64-bit)"
 $PackageName = "AcroRdrDC"
 $Installer = "exe"
 $Source = "$PackageName" + "." + "$Installer"
