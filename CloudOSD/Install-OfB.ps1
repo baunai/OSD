@@ -199,9 +199,9 @@ Set-ADTRegistryKey -Key $RegPath -Name EnableAutomaticUploadBandwidthManagement 
 
 #Continue syncing on metered networks and Prevent users from syncing personal OneDrive accounts
 Invoke-ADTAllUsersRegistryAction -ScriptBlock {
-    New-item -Path HKCU:\Software\Policies\Microsoft -Name OneDrive -Force
-    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue
-    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue                     
+    Set-ADTRegistry -Key 'HKCU:\Software\Policies\Microsoft' -Name OneDrive
+    Set-ADTRegistryKey -Key 'HKCU:\Software\Policies\Microsoft\OneDrive' -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue
+    Set-ADTRegistryKey -Key 'HKCU:\Software\Policies\Microsoft\OneDrive' -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue                     
 }
 
 <#.
