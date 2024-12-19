@@ -200,9 +200,11 @@ Set-ADTRegistryKey -Key $RegPath -Name EnableAutomaticUploadBandwidthManagement 
 #Continue syncing on metered networks and Prevent users from syncing personal OneDrive accounts
 Invoke-ADTAllUsersRegistryAction -ScriptBlock {
     New-item -Path HKCU:\Software\Policies\Microsoft -Name OneDrive -Force
-    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ContinueOnError:$true
-    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ContinueOnError:$true                     
+    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue
+    Set-ADTRegistryKey -Key HKCU:\Software\Policies\Microsoft\OneDrive -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue                     
 }
+
+<#.
 #Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
 
 #Remove Old OneDrive shelve Folder from explorer for all users if existing
@@ -213,11 +215,12 @@ Select-Object @{Name = "SID"; Expression = { $_.PSChildName } },
 
 Foreach ($UserProfile in $UserProfiles) {
     $registryPath = "Registry::HKEY_USERS\$($UserProfile.SID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
-    Remove-ADTRegistryKey -Key $registryPath -ContinueOnError:$true
+    Remove-ADTRegistryKey -Key $registryPath -ErrorAction SilentlyContinue
 }
+.#>
 
 Invoke-ADTAllUsersRegistryAction -ScriptBlock {
-    Remove-ADTRegistryKey -key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}' -Recurse -SID $UserProfile.SID -ContinueOnError:$true
+    Remove-ADTRegistryKey -key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}' -Recurse -SID $UserProfile.SID -ErrorAction SilentlyContinue
 }
 #Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
 
