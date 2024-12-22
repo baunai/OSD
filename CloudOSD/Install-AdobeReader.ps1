@@ -1,3 +1,118 @@
+[CmdletBinding()]
+param ()
+
+# Function to get the latest version and download URL of Adobe Acrobat Reader DC
+function Get-AdobeAcrobatReaderDCUrls {
+    [CmdletBinding()]
+    param ()
+
+    # URL of the Adobe Acrobat Reader DC release notes page
+    $apiUrl = 'https://helpx.adobe.com/acrobat/release-note/release-notes-acrobat-reader.html'
+    Write-Debug "Fetching main release notes page: $apiUrl"
+
+    try {
+        # Fetch the main release notes page using curl.exe
+        $response = curl.exe -s $apiUrl
+        if ($response) {
+            $htmlContent = $response
+            Write-Debug "Main release notes page content fetched."
+        } else {
+            throw "Failed to fetch main release notes page."
+        }
+    } catch {
+        # Handle errors in fetching the main release notes page
+        Write-Debug "Error fetching main release notes page: $_"
+        Write-Output "Error fetching main release notes page: $_"
+        exit
+    }
+
+    # Extract the first <a> link that matches the specified pattern
+    $linkPattern = [regex]::new('<a href="(https://www\.adobe\.com/devnet-docs/acrobatetk/tools/ReleaseNotesDC/[^"]+)"[^>]*>(DC [^<]+)</a>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    $linkMatch = $linkPattern.Match($htmlContent)
+    Write-Debug "Searching for the first release notes link..."
+
+    if ($linkMatch.Success) {
+        # Extract the release notes URL and version from the matched link
+        $releaseNotesUrl = $linkMatch.Groups[1].Value
+        $version = $linkMatch.Groups[2].Value
+        Write-Debug "Release Notes URL: $releaseNotesUrl"
+        Write-Debug "Version: $version"
+
+        # Fetch the release notes page to get the .msp file link
+        Write-Debug "Fetching release notes page: $releaseNotesUrl"
+        try {
+            $releaseNotesResponse = curl.exe -s $releaseNotesUrl
+            if ($releaseNotesResponse) {
+                $releaseNotesContent = $releaseNotesResponse
+                Write-Debug "Release notes page content fetched."
+            } else {
+                throw "Failed to fetch release notes page."
+            }
+        } catch {
+            # Handle errors in fetching the release notes page
+            Write-Debug "Error fetching release notes page: $_"
+            Write-Output "Error fetching release notes page: $_"
+            exit
+        }
+
+        # Find the .msp file link in the release notes page
+        $mspLinkPattern = [regex]::new('<a[^>]+href="([^"]+\.msp)"[^>]*>([^<]+)</a>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        $mspLinkMatch = $mspLinkPattern.Match($releaseNotesContent)
+        Write-Debug "Searching for the .msp file link..."
+
+        if ($mspLinkMatch.Success) {
+            # Extract the .msp file URL and version
+            $mspUrl = $mspLinkMatch.Groups[1].Value
+            Write-Debug "MSP URL: $mspUrl"
+            $mspFileName = [System.IO.Path]::GetFileNameWithoutExtension($mspUrl)
+            $mspVersion = $mspFileName -replace '.*?(\d{4,}).*', '$1'
+            Write-Debug "Extracted MSP Version: $mspVersion"
+
+            # Construct the download URLs for the MUI installer and MSP update files
+            $MUIurl = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/$mspVersion/AcroRdrDC${mspVersion}_MUI.exe"
+            Write-Debug "MUI URL: $MUIurl"
+
+            $MUIurl64 = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/$mspVersion/AcroRdrDCx64${mspVersion}_MUI.exe"
+            Write-Debug "MUI URL 64-bit: $MUIurl64"
+
+            $MUImspURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/$mspVersion/AcroRdrDCUpd${mspVersion}_MUI.msp"
+            Write-Debug "MUI MSP URL: $MUImspURL"
+
+            $MUImspURL64 = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/$mspVersion/AcroRdrDCx64Upd${mspVersion}_MUI.msp"
+            Write-Debug "MUI MSP URL 64-bit: $MUImspURL64"
+
+            # Return the extracted information as a PowerShell custom object
+            return [PSCustomObject]@{
+                Version         = $version
+                ReleaseNotesUrl = $releaseNotesUrl
+                MUIurl          = $MUIurl
+                MUIurl64        = $MUIurl64
+                MUImspURL       = $MUImspURL
+                MUImspURL64     = $MUImspURL64
+            }
+        } else {
+            # Handle cases where the .msp file link is not found
+            Write-Debug "MSP file link not found."
+            Write-Output "MSP file link not found."
+            exit
+        }
+    } else {
+        # Handle cases where the version link is not found
+        Write-Debug "Version link not found."
+        Write-Output "Version link not found."
+        exit
+    }
+}
+
+# Example usage
+$latest = Get-AdobeAcrobatReaderDCUrls
+
+# Write the latest version and URLs
+$DownloadURI = $latest.MUIurl64
+
+
+
+
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
     try {
@@ -39,7 +154,7 @@ function Write-Log {
 
         [Parameter(Mandatory = $false, HelpMessage = "Name of the log file that the entry will written to.")]
         [ValidateNotNullOrEmpty()]
-        [string]$FileName = "Install-AdobeReaderDC.log"
+        [string]$FileName = "Install-AdobeAcrobat64.log"
     )
     
     if (Get-TaskSequenceStatus) {
@@ -207,28 +322,18 @@ $Evergreenx64 = Get-EvergreenApp -Name AdobeACrobatReaderDC -ErrorAction Silentl
 $Destination = "${env:SystemRoot}" + "\ccmcache\$Vendor"
 $ProgressPreference = 'SilentlyContinue'
 $UnattendedArgs = '/sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES ENABLE_CHROMEEXT=0 ENABLE_OPTIMIZATION=1 IW_DEFAULT_VERB=READ ADD_THUMBNAILPREVIEW=0 DISABLEDESKTOPSHORTCUT=1 UPDATE_MODE=3 DISABLE_ARM_SERVICE_INSTALL=1'
-
-<#.
-$VersionURI = "https://rdc.adobe.io/reader/products?lang=en&site=enterprise&os=Windows 10&api_key=dc-get-adobereader-cdn"
-$Version = (Invoke-RestMethod -Uri $VersionURI).Products.Reader.Version 
-$Version = ($Version -replace '\.', $Null).Trim()
-$DownloadURI = ('http://ardownload.adobe.com/pub/adobe/reader/win/AcrobatDC/{0}/AcroRdrDC{0}_en_US.exe' -f $Version)
-.#>
-
+ 
 If (!(Test-Path -Path $Destination)) { New-Item -ItemType directory -Path $Destination | Out-Null }
 Write-Log -Message "INFO: Creating folder: $($Destination)"
-Write-Log -Message "INFO: Dowloading $Vendor $Product $Version to $Destination"
+Write-Log -Message "INFO: Dowloading $Vendor $Product to $Destination"
 if (!(Test-Path $Destination\$Source)) {
     if ($Evergreenx64) {
         Write-Log -Message "INFO: $Evergreenx64 found. Start downloading"
         Invoke-WebRequest -Uri $Evergreenx64.URI -UseBasicParsing -OutFile "$Destination\$Source"
-    #} elseif ($Evergreen) {
-    #    Write-Log -Message "INFO: $Evergreen found. Start downloading"
-    #    Invoke-WebRequest -Uri $Evergreen.URI -UseBasicParsing -OutFile "$Destination\$Source"
     } else {
         Write-Log -Message "INFO: Evergreen does not work because the macOS and Windows update versions are out of step right now. Start another downloading method."
-        Write-Log -Message "Failed to downlaod Adobe Acrobat 64-bit" -Severity 3
-        #Invoke-WebRequest -Uri $DownloadURI -UseBasicParsing -OutFile "$Destination\$Source"
+        Write-Log -Message "INFO: Dowloading $Vendor $Product from $DownloadURI link"
+        Invoke-WebRequest -Uri $DownloadURI -UseBasicParsing -OutFile "$Destination\$Source"
     }
 }    
 
@@ -253,14 +358,15 @@ $RegLocations = @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
 
 $AdobeRdrInstalled = $False
 foreach ($Key in (Get-ChildItem $RegLocations) ) {
-    if ($Key.GetValue('DisplayName') -like '*Acrobat (64-Bit)*') {
-        $AdobeRdrInstalled = $Key.GetValue('DisplayName')
+    if ($Key.GetValue('DisplayName') -like '*Acrobat (64-bit)*') {
+        $AdobeInstalledName = $Key.GetValue('DisplayName')
+        $AdobeInstalledVersion = $Key.GetValue('DisplayVersion')
         $AdobeRdrInstalled = $True
     }
 }
 
 if ($AdobeRdrInstalled) {
-    Write-Log -Message "INFO: $Vendor $Product $Version successfully installed."
+    Write-Log -Message "INFO: $AdobeInstalledName $AdobeInstalledVersion successfully installed."
 }
 
 
