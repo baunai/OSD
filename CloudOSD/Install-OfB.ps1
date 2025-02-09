@@ -200,27 +200,27 @@ Set-ADTRegistryKey -Key $RegPath -Name EnableAutomaticUploadBandwidthManagement 
 #Continue syncing on metered networks and Prevent users from syncing personal OneDrive accounts
 Invoke-ADTAllUsersRegistryAction -ScriptBlock {
     Set-ADTRegistry -Key 'HKCU:\Software\Policies\Microsoft' -Name OneDrive
-    Set-ADTRegistryKey -Key 'HKCU:\Software\Policies\Microsoft\OneDrive' -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue
-    Set-ADTRegistryKey -Key 'HKCU:\Software\Policies\Microsoft\OneDrive' -Name DisablePersonalSync -Type DWord -Value 1 -SID $UserProfile.SID -ErrorAction SilentlyContinue                     
+    Set-ADTRegistryKey -Key 'HKCU:\Software\Policies\Microsoft\OneDrive' -Name DisablePauseOnMeteredNetwork -Type DWord -Value 1 -SID $_.SID -ErrorAction SilentlyContinue
+    Set-ADTRegistryKey -Key 'HKCU:\Software\Policies\Microsoft\OneDrive' -Name DisablePersonalSync -Type DWord -Value 1 -SID $_.SID -ErrorAction SilentlyContinue                     
 }
 
 <#.
 #Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
 
 #Remove Old OneDrive shelve Folder from explorer for all users if existing
-$UserProfiles = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*" | Where-Object { $_.PSChildName -match "S-1-5-21-(\d+-?){4}$" -or $_.PSChildName -match "S-1-12-1-(\d+-?){4}$" } |
+$_s = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*" | Where-Object { $_.PSChildName -match "S-1-5-21-(\d+-?){4}$" -or $UserProfile.PSChildName -match "S-1-12-1-(\d+-?){4}$" } |
 Select-Object @{Name = "SID"; Expression = { $_.PSChildName } }, 
 @{Name = "UserHive"; Expression = { "$($_.ProfileImagePath)\NTUser.dat" } },
 @{Name = "UserName"; Expression = { $_.ProfileImagePath -replace '^(.*[\\\/])', '' } }
 
-Foreach ($UserProfile in $UserProfiles) {
-    $registryPath = "Registry::HKEY_USERS\$($UserProfile.SID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
+Foreach ($_ in $_s) {
+    $registryPath = "Registry::HKEY_USERS\$($_.SID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
     Remove-ADTRegistryKey -Key $registryPath -ErrorAction SilentlyContinue
 }
 .#>
 
 Invoke-ADTAllUsersRegistryAction -ScriptBlock {
-    Remove-ADTRegistryKey -key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}' -Recurse -SID $UserProfile.SID -ErrorAction SilentlyContinue
+    Remove-ADTRegistryKey -key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}' -Recurse -SID $_.SID -ErrorAction SilentlyContinue
 }
 #Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings -ContinueOnError:$true
 
