@@ -44,8 +44,10 @@
   [Switch]$KeepMSI = $False,
 
   [String]$OfficeInstallDownloadPath = "$($env:windir)\Temp\OfficeInstall",
-  [Switch]$CleanUpInstallFiles = $True
+  [Switch]$CleanUpInstallFiles
 )
+
+$CleanUpInstallFiles = $true
 
 function Get-TaskSequenceStatus {
     # Determine if a task sequence is currently running
@@ -509,13 +511,15 @@ foreach ($Key in (Get-ChildItem $RegLocations) ) {
 }
 
 if ($OfficeInstalled) {
-    Write-Log -Message "$($OfficeVersionInstalled) installed successfully!"
+    # Clean up the install files
+    if ($CleanUpInstallFiles) {
+      Write-Log -Message "[Info] Cleaning up install files..."
+      Remove-Item -Path $OfficeInstallDownloadPath -Force -Recurse
+      Remove-Item -Path $RibbonFolder -Force -Recurse
+    }
+    Write-Log -Message "[Info] Microsoft 365 was detected after the install ran"
+    Write-Log -Message "$($OfficeVersionInstalled) installed successfully!" -Severity 1
 }
 else {
   Write-Log -Message "[Error] Microsoft 365 was not detected after the install ran" -Severity 3
-}
-
-if ($CleanUpInstallFiles) {
-  Remove-Item -Path $OfficeInstallDownloadPath -Force -Recurse
-  Remove-Item -Path $RibbonFolder -Force -Recurse
 }
