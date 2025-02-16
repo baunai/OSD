@@ -423,14 +423,6 @@ $ConfigurationXMLFile = "$OfficeInstallDownloadPath\OfficeInstall.xml"
 Write-Log -Message "[Info] Downloading the Office Deployment Tool..." -ForegroundColor Cyan
 Invoke-Download -URL (Get-ODTURL) -OutputFile "$OfficeInstallDownloadPath\ODTSetup.exe" -Attempts 3 -SkipSleep
 
-
-# Download ODTSetup.exe from another url if not detected
-if(!(Test-Path "$OfficeInstallDownloadPath\ODTSetup.exe")) {
-    Write-Log -Message 'Downloading the Office Deployment Tool with Invoke-WebRequest method.....'
-    $ODTUrl = (Invoke-WebRequest -Uri 'https://www.microsoft.com/en-us/download/details.aspx?id=49117').Links.href | Where-Object {$_ -like '*officedeploymenttool*'}
-    Invoke-WebRequest -Uri $ODTUrl -OutFile "$OfficeInstallDownloadPath\ODTSetup.exe"
-}
-
 #Run the Office Deployment Tool setup
 try {
   Write-Log -Message "Running the Office Deployment Tool..."
