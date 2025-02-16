@@ -118,9 +118,9 @@ if ($WriteHost) {
             )
             if (${PSVersionTable}.PSVersion.Major -eq "7") {
                 switch ($lSeverity) {
-                    3 { $Style = "$($PSStyle.Bold)$($PSStyle.Foreground.Red)"; Write-Host "$($Style)$lTextLogLine" }
-                    2 { $Style = "$($PSStyle.Bold)$($PSStyle.Foreground.Yellow)"; Write-Host "$($Style)$lTextLogLine" }
-                    1 { $Style = "$($PSStyle.Bold)$($PSStyle.Foreground.White)"; Write-Host "$($Style)$lTextLogLine" }
+                    3 { $Style = "$($PSStyle.Bold)$($PSStyle.Foreground.Red)"; Write-Log -Message "$($Style)$lTextLogLine" }
+                    2 { $Style = "$($PSStyle.Bold)$($PSStyle.Foreground.Yellow)"; Write-Log -Message "$($Style)$lTextLogLine" }
+                    1 { $Style = "$($PSStyle.Bold)$($PSStyle.Foreground.White)"; Write-Log -Message "$($Style)$lTextLogLine" }
                 }
             }
 
@@ -128,17 +128,17 @@ if ($WriteHost) {
                 if ($Host.UI.RawUI.ForegroundColor) {
                     switch ($lSeverity) {
                         3 {
-                            Write-Host -Object $lTextLogLine -ForegroundColor Red
+                            Write-Log -Message -Object $lTextLogLine -ForegroundColor Red
                         }
                         2 {
-                            Write-Host -Object $lTextLogLine -ForegroundColor Yellow
+                            Write-Log -Message -Object $lTextLogLine -ForegroundColor Yellow
                         }
                         1 {
-                            Write-Host -Object $lTextLogLine
+                            Write-Log -Message -Object $lTextLogLine
                         }
                     }
                 }
-                # If executing "powershell.exe" -File <filename>.ps1 > log.txt", then all the Write-Host calls are converted to Write-Output calls so that they are included in the text log.
+                # If executing "powershell.exe" -File <filename>.ps1 > log.txt", then all the Write-Log -Message calls are converted to Write-Output calls so that they are included in the text log.
                 else {
                     Write-Output -InputObject ($lTextLogLine)
                 }
@@ -257,20 +257,141 @@ function Set-XMLFile {
   
 }
 
-<#.
 function Get-ODTURL {
+  $Uri = 'https://www.microsoft.com/en-us/download/details.aspx?id=49117'
+  $DownloadURL = ""
+  for ($i = 1; $i -le 3; $i++) {
+      try {
+          $MSWebPage = Invoke-WebRequest -Uri $Uri -UseBasicParsing -MaximumRedirection 10
+          $DownloadURL = $MSWebPage.Links | Where-Object { $_.href -like "*officedeploymenttool*.exe" } | Select-Object -ExpandProperty href -First 1
+          if ($DownloadURL) {
+              break   
+          }
+          Write-Log -Message "[Warn] Unable to find the download link for the Office Deployment Tool at: $Uri. Attempt $i of 3." -Severity 2
 
-  [String]$MSWebPage = Invoke-RestMethod 'https://www.microsoft.com/en-us/download/confirmation.aspx?id=49117'
-
-  #Thank you reddit user, u/sizzlr for this addition.
-  $MSWebPage | ForEach-Object {
-    if ($_ -match 'url=(https://.*officedeploymenttool.*\.exe)') {
-      $matches[1]
-    }
+          Start-Sleep -Seconds $($i * 30)
+      }
+      catch {
+          Write-Log -Message "[Warn] Unable to connect to the Microsoft website. Attempt $i of 3." -Severity 2
+      }
   }
 
+      if (-NOT $DownloadURL) {
+          Write-Log -Message "[Error] Unable to find the download link for the Office Deployment Tool at: $Uri." -Severity 3
+          exit 1
+      }
+      return $DownloadURL
+  }
+
+function Invoke-Download {
+    param (
+        [Parameter()]
+        [string]$URL,
+
+        [Parameter()]
+        [string]$OutputFile,
+
+        [Parameter()]
+        [int]$Attempts = 3,
+
+        [Parameter()]
+        [switch]$SkipSleep
+    )
+    
+    #Display the URL being used for the download
+    Write-Log -Message "[Info] URL '$URL' was given for download."
+    Write-Log -Message "[Info] Downloading the file..."
+
+    # Determine the supported TLS versions adn set the approriate security protocol
+    $SupportedTLSversions = [enum]::GetValues('Net.SecurityProtocolType')
+    if (($SupportedTLSversions -contains 'Tls13') -and ($SupportedTLSversions -contains 'Tls12')) {
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol::Tls13 -bor [System.Net.SecurityProtocolType]::Tls12            
+    } elseif ($SupportedTLSversions -contains 'Tls12') {
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    } else {
+        # Warn the user if TLS 1.2 and TLS 1.3 are not supported, which may cause issues with downloading the file
+        Write-Log -Message "[Warn] TLS 1.2 and TLS 1.3 are not supported on this system. This may cause issues with downloading the file."
+        if ($PSVersionTable.PSVersion.Major -lt 3) {
+            Write-Log -Message "[Warn] PowerShell 2 / .NET 2.0 doesn't support TLS 1.2." -Severity 2                  
+        }
+    }
+
+    # Initialize the attempt counter
+    $i = 1
+    while (${i} -le ${Attempts}) {
+        # if SkipSleep is not set, wait for a randoe time between 3 and 15 seconds before each attempt
+        if (-NOT($SkipSleep)) {
+            $Sleeptime = Get-Random -Minimum 3 -Maximum 15
+            Write-Log -Message "[Info] Waiting for $Sleeptime seconds before attempt $i of $Attempts."
+            Start-Sleep -Seconds $Sleeptime
+        }
+
+        # Provide a visual break between attempts
+        if ($i -ne 1) {
+            Write-Log -Message ""
+        }
+
+        Write-Log -Message "[Info] Attempt $i of $Attempts to download the file."
+
+        # Temporary disable progress reporting to speed up script performance
+        $PreviousProgressPreference = $ProgressPreference
+        $ProgressPreference = 'SilentlyContinue'
+        try {
+            if ($PSVersionTable.PSVersion.Major -lt 3) {
+                # For older versions of PowerShell, use WebClient method to download the file
+                $WebClient = New-Object System.Net.WebClient
+                $WebClient.DownloadFile($URL, $OutputFile)
+            } else {
+                # For PowerShell 4 and newer, use Invoke-WebRequest with specified arguments
+                $WebRequestArguments = @{
+                    Uri = $URL
+                    OutFile = $OutputFile
+                    MaximumRedirection = 10
+                    UseBasicParsing = $true
+                    DisableKeepAlive = $true
+                    TimeoutSec = 300
+                }
+                Invoke-WebRequest @WebRequestArguments
+            }
+            # Verify if the file was downloaded successfully
+            $File = Test-Path -Path $OutputFile -ErrorAction SilentlyContinue
+        }
+        catch [System.Net.WebException] {
+            Write-Log -Message "[Warn] Unable to download the file. $_.Exception.Message" -Severity 2
+
+            # If the file partially downloaded, remove it to avoid corruption
+            if ($File) {
+                Remove-Item -Path $OutputFile -Force -Confirm:$false -ErrorAction SilentlyContinue
+            }
+
+            $File = $false
+        }
+
+        # Restore the previous progress preference setting
+        $ProgressPreference = $PreviousProgressPreference
+        # If the file was downloaded successfully, exit the loop
+        if ($File) {
+            $i = $Attempts
+        } else {
+            # Warn the user if the download attemp failed
+            Write-Log -Message "[Warn] File failed to downaload." -Severity 2
+            Write-Log -Message ""
+        }
+
+        # Increment the attempt counter
+        $i++
+    }
+
+    # Final check if the file still doesn't exist, report an error and exit
+    if (-NOT(Test-Path -Path $OutputFile)) {
+        Write-Log -Message "[Error] File failed to download after $Attempts attempts." -Severity 3
+        Write-Log -Message "Please verify the download URL of '$URL' and try again." -Severity 3
+        exit 1
+    } else {
+        # If the file was downloaded successfully, display the file path
+        Write-Log -Message "[Info] File downloaded successfully to '$OutputFile'."
+    }
 }
-.#>
 
 $VerbosePreference = 'Continue'
 $ErrorActionPreference = 'Stop'
@@ -297,23 +418,11 @@ else {
 }
 
 $ConfigurationXMLFile = "$OfficeInstallDownloadPath\OfficeInstall.xml"
-#$ODTInstallLink = Get-ODTURL
-Write-Log -Message "Download Office Deployment Tool from $($ODTInstallLink)"
 
-<#.
-#Download the Office Deployment Tool
-Write-Log -Message 'Downloading the Office Deployment Tool...'
-try {
-  Invoke-WebRequest -Uri $ODTInstallLink -OutFile "$OfficeInstallDownloadPath\ODTSetup.exe"
-}
-catch {
-  Write-Log -Message 'There was an error downloading the Office Deployment Tool.' -Severity 2
-  Write-Log -Message 'Please verify the below link is valid:' -Severity 2
-  Write-Log -Message "$ODTInstallLink" -Severity 2
-  Write-Log -Message "Please verify the below link is valid: $ODTInstallLink" -Severity 2
-  exit
-}
-.#>
+# Download the Office Deployment Tool
+Write-Log -Message "[Info] Downloading the Office Deployment Tool..." -ForegroundColor Cyan
+Invoke-Download -URL (Get-ODTURL) -OutputFile "$OfficeInstallDownloadPath\ODTSetup.exe" -Attempts 3 -SkipSleep
+
 
 # Download ODTSetup.exe from another url if not detected
 if(!(Test-Path "$OfficeInstallDownloadPath\ODTSetup.exe")) {
@@ -411,7 +520,7 @@ if ($OfficeInstalled) {
     Write-Log -Message "$($OfficeVersionInstalled) installed successfully!"
 }
 else {
-  Write-Log -Level ERROR -Message "Microsoft 365 was not detected after the install ran"
+  Write-Log -Message "[Error] Microsoft 365 was not detected after the install ran" -Severity 3
 }
 
 if ($CleanUpInstallFiles) {
