@@ -148,7 +148,7 @@ function Get-SystemEnclosureInfo {
 
 function Get-NicConfigurationInfo {
 
-    (gwmi -Class 'Win32_NetworkAdapterConfiguration' -Filter "IPEnabled = 1") | foreach {
+    (gwmi -Class 'Win32_NetworkAdapterConfiguration' -Filter "IPEnabled = 1") | Where-Object {$_.Description -notlike "*Wireless*"} | foreach {
         
         $_.IPAddress |% {
             if($_ -ne $null) {
