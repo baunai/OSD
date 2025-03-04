@@ -232,19 +232,19 @@ if (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name Manufacturer -PropertyType String -Message $MyComputerManufacturer -Force
 Write-Log -Message "Set Manufacturer to $MyComputerManufacturer"
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name Model -PropertyType String -Message $MyComputerModel -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name Model -PropertyType String - Value $MyComputerModel -Force
 Write-Log -Message "Set Model to $MyComputerModel"
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name Model -PropertyType String -Message $MyComputerProduct -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name Model -PropertyType String -Value $MyComputerProduct -Force
 Write-Log -Message "Set Model to $MyComputerProduct"
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name SupportHours -PropertyType string -Message $SupportHours -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name SupportHours -PropertyType string -Value $SupportHours -Force
 Write-Log -Message "Set SupportHours to $SupportHours"
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name SupportPhone -PropertyType String -Message $SupportPhone -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name SupportPhone -PropertyType String -Value $SupportPhone -Force
 Write-Log -Message "Set SupportPhone to $SupportPhone"
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name SupportURL -PropertyType String -Message $SupportURL -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Name SupportURL -PropertyType String -Value $SupportURL -Force
 Write-Log -Message "Set SupportURL to $SupportURL"
 
 $Script_End_Time = (Get-Date).ToShortDateString() + ", " + (Get-Date).ToLongTimeString()
