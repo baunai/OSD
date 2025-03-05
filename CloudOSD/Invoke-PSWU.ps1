@@ -56,7 +56,6 @@ function Write-Log {
         $LogFilePath = Join-Path -Path $LogDir -ChildPath $FileName
     }
 
-$global:ScriptLogFilePath = $LogFilePath
 $VerbosePreference = 'Continue'
 
 if ($WriteHost) {
@@ -95,21 +94,9 @@ if ($WriteHost) {
 
 }
 
-# Leave blank space at top of window to not block output by progress bars
-Function AddHeaderSpace {
-    Write-Output "This space intentionally left blank..."
-    Write-Output ""
-    Write-Output ""
-    Write-Output ""
-    Write-Output ""
-    Write-Output ""
-}
-
-AddHeaderSpace
-
 $Script_Start_Time = (Get-Date).ToShortDateString() + ", " + (Get-Date).ToLongTimeString()
 Write-Log -Message "INFO: Script Start: $Script_Start_Time"
-Write-Log -Message "PSWindowsUpdate module not FOUND. Start downloading...."
+
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
@@ -120,7 +107,14 @@ $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+
+# Bypass Proxy
+(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+#[System.Net.Http.HttpClient]::DefaultProxy = New-Object System.Net.WebProxy($null)
+
+#Setup LOCALAPPDATA Variable
+[System.Environment]::SetEnvironmentVariable('LOCALAPPDATA', "$env:SystemDrive\Windows\system32\config\systemprofile\AppData\Local")
+
 
 Function Initialize-Module {
     [CmdletBinding()]
@@ -152,18 +146,11 @@ Function Initialize-Module {
         }
         Else {
             # Install Nuget
-            Write-Host "Installing Nuget Package Provider"
-            if (!(Test-Path -Path "C:\Program Files\PackageManagement\ProviderAssemblies\nuget")) { 
-                Import-Module -Name PackageManagement -Force
-                Install-PackageProvider -Name Nuget -Force -Scope AllUsers -Confirm:$false -Verbose 
-            }
-            
-<#.
             If (-not(Get-PackageProvider -ListAvailable -Name NuGet)) {
+                #Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
                 Install-PackageProvider -Name NuGet -Force
                 Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
             }
-.#>
 
             # Add the Powershell Gallery as trusted repository
             If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted") {
@@ -195,21 +182,30 @@ Function Initialize-Module {
     }
 }
 
-Initialize-Module -Module "PSWindowsUpdate"
+Initialize-Module -Module "kbupdate"
 
 $OSVer = Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name "DisplayVersion"
 $OSName = (Get-ComputerInfo).OSName
 Write-Log -Message "Run Windows Update of $OSName build version $OSVer"
 
+$Updates = Get-KbNeededUpdate -UseWindowsUpdate
+
 # Get information about local WSUS server
 $wuServer = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name WUServer -ErrorAction Ignore).WUServer
 
 if ($null -eq $wuServer) {
-        Write-Log -Message "No WSUS server setting found. Directly install updates from Microsoft."
-        $OutputText = Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-String
-        Write-Log -Message "[$OutputText]"
-        #Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-File -FilePath $ScriptLogFilePath -Append -NoClobber -Encoding default -Width 256
-        Write-Log -Message "Complete windows update on $env:COMPUTERNAME"
+    Write-Log -Message "No WSUS server setting found. Directly install updates from Microsoft."
+    foreach ($Update in $Updates) {
+        Write-Log -Message "KB: $($Update.kbupdate)"
+        Write-Log -Message "Title: $($Update.title)"
+        Write-Log -Message "Description: $($Update.description)"
+        Write-Log -Message "URL: $($Update.link)"
+        Write-Log -Message "Initiating installation of KB: $($Update.kbupdate)"
+        $OutputText = Install-KbUpdate -ComputerName "$env:COMPUTERNAME" -HotfixId $Update.kbupdate -Verbose *>&1 | Out-String
+        Write-Log -Message $OutputText
+        Write-Log -Message "Finished installing KB: $($Update.kbupdate)"
+        Write-Log -Message "-----------------------------------------------------------"       
+    }    
 }
 
 if ($null -ne $wuServer) {
@@ -217,17 +213,24 @@ if ($null -ne $wuServer) {
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 0
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 0
     Restart-Service wuauserv
-    $OutputText = Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-String
-    Write-Log -Message "[$OutputText]"
-    #Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-File -FilePath $ScriptLogFilePath -Append -NoClobber -Encoding default -Width 256
+    foreach ($Update in $Updates) {
+        Write-Log -Message "KB: $($Update.kbupdate)"
+        Write-Log -Message "Title: $($Update.title)"
+        Write-Log -Message "Description: $($Update.description)"
+        Write-Log -Message "URL: $($Update.link)"
+        Write-Log -Message "Initiating installation of KB: $($Update.kbupdate)"
+        $OutputText = Install-KbUpdate -ComputerName "$env:COMPUTERNAME" -HotfixId $Update.kbupdate -Verbose *>&1 | Out-String
+        Write-Log -Message $OutputText
+        Write-Log -Message "Finished installing KB: $($Update.kbupdate)"
+        Write-Log -Message "-----------------------------------------------------------"        
+    }    #Install-WindowsUpdate -Install -NotCategory "Drivers" -AcceptAll -MicrosoftUpdate -IgnoreReboot -Title $OSVer -Verbose *>&1 | Out-File -FilePath $ScriptLogFilePath -Append -NoClobber -Encoding default -Width 256
     
-    # Reset WSUS Setting
-    Write-Log -Message "***********************************************************"
+    # Reset WSUS Settings
     Write-Log -Message "Enable WSUS setting again POST installing" -Severity 1
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWuServer" -Value 1
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "DisableWindowsUpdateAccess" -Value 1
     Restart-Service wuauserv
-    Write-Log -Message "Complete windows update on $env:COMPUTERNAME"   
+    Write-Log -Message "Complete windows updates on $env:COMPUTERNAME"   
 }
 
 $Script_End_Time = (Get-Date).ToShortDateString() + ", " + (Get-Date).ToLongTimeString()
@@ -235,4 +238,3 @@ $Script_Time_Taken = New-TimeSpan -Start $Script_Start_Time -End $Script_End_Tim
 
 Write-Log -Message "INFO: Script end: $Script_End_Time"
 Write-Log -Message "INFO: Execution time: $Script_Time_Taken"
-Write-Log -Message "***************************************************************************"
