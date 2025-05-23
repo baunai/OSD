@@ -28,6 +28,10 @@ function Write-Log {
         [ValidateNotNullOrEmpty()]
         [string]$Message,
 
+        [Parameter(Mandatory = $false, HelpMessage = "Set running script component")]
+        [ValidateNotNullOrEmpty()]
+        [string]$Component = "RunPowerShellScript",
+
         [Parameter(Mandatory = $false, HelpMessage = "Severity for the log entry. 1 for Informational, 2 for Warning, 3 for Error.")]
         [ValidateNotNullOrEmpty()]
         [ValidateRange(1, 3)]
@@ -77,8 +81,9 @@ if ($WriteHost) {
 }
 
     $TimeGenerated = "$(Get-Date -Format HH:mm:ss).$((Get-Date).Millisecond)+000"
-    $Line = '<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="" type="{4}" thread="" file="">'
-    $LineFormat = $Message, $TimeGenerated, (Get-Date -Format MM-dd-yyyy), "$($FileName.Substring(0,$FileName.Length-4)):$($MyInvocation.ScriptLineNumber)", $Severity
+    $DateGenerated = "$(Get-Date -Format MM-dd-yyyy)"
+    $Line = '<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="" type="{4}" thread="$($pid)" file="">'
+    $LineFormat = $Message, $TimeGenerated, $DateGenerated, "$($FileName.Substring(0,$FileName.Length-4)):$($MyInvocation.ScriptLineNumber)", $Severity
     $Line = $Line -f $LineFormat
     
     try {
