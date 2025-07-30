@@ -91,11 +91,11 @@ $physicalDisks = Get-PhysicalDisk | where-object{$diskorder -match $_.BusType} |
 
         # Display all physical disks that have been found
         foreach ($disk in $physicalDisks) {
-                Write-Log -Message "FriendlyName:  $($disk.FriendlyName)"
-                Write-Log -Message "MediaType:  $($disk.MediaType)"
-                Write-Log -Message "BusType:  $($disk.BusType)"
-                Write-Log -Message "Size:  $([math]::Round($disk.Size /1GB))GB"
-                Write-Log -Message "DeviceID:  $($disk.DeviceID)"
+                Write-Log -Message "FriendlyName: $($disk.FriendlyName)"
+                Write-Log -Message "MediaType: $($disk.MediaType)"
+                Write-Log -Message "BusType: $($disk.BusType)"
+                Write-Log -Message "Size: $([math]::Round($disk.Size /1GB)) GB"
+                Write-Log -Message "DeviceID: $($disk.DeviceID)"
                 Write-Log
         }
 
