@@ -70,6 +70,11 @@ if ($Disks.Count -eq 0) {
     foreach ($Disk in $Disks) {
         $DiskPartition = $Disk | Get-Disk | Select-Object -ExpandProperty PartitionStyle
         $DiskNumber = $Disk | Get-Disk | Select-Object -ExpandProperty Number
+        if (${DiskPartition} -eq "RAW") {
+            Initialize-Disk -Number $DiskNumber -PartitionStyle $Style -PassThru | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -Confirm:$false
+            Write-Log -Message "Initialized RAW disk $($DiskNumber) with PartitionStyle $($Style)."
+            Write-Host "Initialized RAW disk $($DiskNumber) with PartitionStyle $($Style)."           
+        }
         Write-Log -Message "FriendlyName: $($Disk.FriendlyName)"
         Write-Host "FriendlyName: $($Disk.FriendlyName)"
         Write-Log -Message "DeviceID: $($Disk.DeviceID)"
@@ -247,3 +252,4 @@ foreach ($Disk in $Disks) {
         }
         exit
 }
+
