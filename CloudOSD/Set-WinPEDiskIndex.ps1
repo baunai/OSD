@@ -40,16 +40,6 @@ if ($TSEnv.Value("_SMSTSBootUEFI") -eq "True") {
     Write-Host "System is booted in BIOS mode. Setting PartitionStyle to MBR."
 }
 
-# Initialize RAW disks if found
-$RawDisks = Get-Disk | Where-Object {$_.PartitionStyle -eq "RAW"}
-if ($RawDisks.Count -gt 0) {
-    foreach ($RawDisk in $RawDisks) {
-        Write-Host "Initializing raw disk $($RawDisk.Number)..."
-        Write-Log -Message "Initializing raw disk $($RawDisk.Number)..."
-        Initialize-Disk -Number $RawDisk.Number -PartitionStyle $Style -PassThru | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -Confirm:$false
-    }
-}
-
 # Define the desired bus type order
 $Disks = @()
 $BusTypeOrder = @("RAID", "NVMe", "SSD", "SAS", "SATA")
@@ -73,8 +63,8 @@ if ($Disks.Count -eq 0) {
         if (${DiskPartition} -eq "RAW") {
             Initialize-Disk -Number $DiskNumber -PartitionStyle $Style -PassThru | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -Confirm:$false
             Write-Log -Message "Initialized RAW disk $($DiskNumber) with PartitionStyle $($Style)."
-            Write-Host "Initialized RAW disk $($DiskNumber) with PartitionStyle $($Style)."  
-            $DiskPartition = $Disk | Get-Disk | Select-Object -ExpandProperty PartitionStyle
+            Write-Host "Initialized RAW disk $($DiskNumber) with PartitionStyle $($Style)."
+            $DiskPartition = $Disk | Get-Disk | Select-Object -ExpandProperty PartitionStyle           
         }
         Write-Log -Message "FriendlyName: $($Disk.FriendlyName)"
         Write-Host "FriendlyName: $($Disk.FriendlyName)"
@@ -124,7 +114,9 @@ foreach ($Disk in $Disks) {
     } elseif ($Disk.BusType -eq "NVMe") {
     # NVMe: Pick smallest size, choose Disk 0 if multiple same size
         $NVMeDisks = $Disks | Where-Object {$_.BusType -eq "NVMe"} | Sort-Object Size
-        if ($NVMeDisks.Count -gt 0) {
+        if ($NVMeDisks.Count -gt 1) {
+            Write-Log -Message "$($NVMeDisks.Count) NVMe disks found."
+            Write-Host "$($NVMeDisks.Count) NVMe disks found."
             $SmallestSize = $NVMeDisks[0].Size
             $SmallestNVMeDisks = $NVMeDisks | Where-Object {$_.Size -eq $SmallestSize}
 
@@ -157,7 +149,27 @@ foreach ($Disk in $Disks) {
                 Write-Host "$($Disk.BusType) disk selected. OSDDiskIndex set to $($SelectedDisk.DeviceID)."
                 exit
             }
-        }        
+        } else {            
+            $TSEnv.Value("OSDDiskIndex") = $NVMeDisks[0].DeviceID
+            $DiskIndex = $TSEnv.Value("OSDDiskIndex")
+            Write-Log -Message "$($Disk.BusType) bustype detected."
+            Write-Host "$($Disk.BusType) bustype detected."
+            # Clear disk partition and data
+            Clear-Disk -Number $DiskIndex -RemoveOEM -RemoveData -Confirm:$false
+            Write-Log -Message "Command: Clear-Disk -Number $($DiskIndex) -RemoveOEM -RemoveData -Confirm:$false"
+            Write-Host "Command: Clear-Disk -Number $($DiskIndex) -RemoveOEM -RemoveData -Confirm:`$false"
+            # Initialize-Disk
+            Initialize-Disk -Number $DiskIndex -PartitionStyle $style
+            Write-Log -Message "Command: Initialize-Disk -Number $($DiskIndex) -PartitionStyle $($style)"
+            Write-Host "Command: Initialize-Disk -Number $($DiskIndex) -PartitionStyle $($style)"
+
+            New-Partition -DiskNumber $DiskIndex -UseMaximumSize -AssignDriveLetter | Format-Volume -FileSystem NTFS -NewFileSystemLabel OSDisk -Confirm:$False
+            Write-Log -Message "Command: New-Partition -DiskNumber $DiskIndex -UseMaximumSize -AssignDriveLetter | Format-Volume -FileSystem NTFS -NewFileSystemLabel OSDisk -Confirm:$False"
+            Write-Host "Command: New-Partition -DiskNumber $DiskIndex -UseMaximumSize -AssignDriveLetter | Format-Volume -FileSystem NTFS -NewFileSystemLabel OSDisk -Confirm:`$False"
+            Write-Log -Message "$($Disk.BusType) disk selected. OSDDiskIndex set to $($NVMeDisks[0].DeviceID)."
+            Write-Host "$($Disk.BusType) disk selected. OSDDiskIndex set to $($NVMeDisks[0].DeviceID)."
+            exit
+        }       
     } elseif ($Disk.BusType -eq "SSD") {
             # SSD: Pick the largest size
             try {
@@ -253,5 +265,3 @@ foreach ($Disk in $Disks) {
         }
         exit
 }
-
-
